@@ -34,6 +34,38 @@
 .PARAMETER PowershellRunAsArch
 	If your task scheduler machine is 64 bit this enforces the script to run under the 32 bit or 64 bit
 	Powershell host.  By default, it will always run as 64 bit.
+
+.ToDos
+Add the function to add a task, triggeret by Event ID:
+$name = "Setting DefaultHostName in preferences.xml"
+$taskRunAsuser="NTAuthority\SYSTEM"
+#$taskRunasUserPwd = "password"
+$Hostname = $Env:computername
+
+$Service = new-object -ComObject ("Schedule.Service")
+$Service.Connect($Hostname)
+$RootFolder = $Service.GetFolder("\")
+$TaskDefinition = $Service.NewTask(0)
+$regInfo = $TaskDefinition.RegistrationInfo
+$regInfo.Description = 'TEST'
+$regInfo.Author = $taskRunAsuser
+$settings = $taskDefinition.Settings
+$settings.Enabled = $true
+$settings.StartWhenAvailable = $true
+#$settings.AllowDemandStart = $true
+$settings.Hidden = $false
+$Triggers = $TaskDefinition.Triggers
+$Trigger = $Triggers.Create(0) ## 0 is an event trigger
+
+$Trigger.Id = '1074'
+$Trigger.Subscription =  "<QueryList><Query Id='0'><Select Path='System'>*[System[(EventID='1074')]]</Select></Query></QueryList>" 
+$Trigger.Enabled = $true
+
+$Action = $TaskDefinition.Actions.Create(0)
+$Action.Path = 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe'
+$Action.Arguments = $('-file "' + $dirFiles + '\Change.ps1"')
+
+$rootFolder.RegisterTaskDefinition('Test',$TaskDefinition,6,$taskRunAsuser ,1)
 #>
 [CmdletBinding()]
 [OutputType([bool])]
