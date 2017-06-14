@@ -66,6 +66,40 @@ $Action.Path = 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe'
 $Action.Arguments = $('-file "' + $dirFiles + '\Change.ps1"')
 
 $rootFolder.RegisterTaskDefinition('Test',$TaskDefinition,6,$taskRunAsuser ,1)
+
+
+ORG kode:
+Kilde: https://community.spiceworks.com/topic/1030490-task-scheduler-vb-script-help?page=1
+$name = 'task-test'
+$taskRunAsuser="domain\user"
+$taskRunasUserPwd = "password"
+$Hostname = $Env:computername
+
+$Service = new-object -ComObject ("Schedule.Service")
+$Service.Connect($Hostname)
+$RootFolder = $Service.GetFolder("\")
+$TaskDefinition = $Service.NewTask(0)
+$regInfo = $TaskDefinition.RegistrationInfo
+$regInfo.Description = 'TEST'
+$regInfo.Author = $taskRunAsuser
+$settings = $taskDefinition.Settings
+$settings.Enabled = $true
+$settings.StartWhenAvailable = $true
+#$settings.AllowDemandStart = $true
+$settings.Hidden = $false
+$Triggers = $TaskDefinition.Triggers
+$Trigger = $Triggers.Create(0) ## 0 is an event trigger
+
+$Trigger.Id = '4800'
+$Trigger.Subscription =  "<QueryList><Query Id='0'><Select Path='System'>*[System[(EventID='4800')]]</Select></Query></QueryList>" 
+$Trigger.Enabled = $true
+
+$Action = $TaskDefinition.Actions.Create(0)
+$Action.Path = 'ping.exe'
+$Action.Arguments = 'yourcomputer > c:\temp\output.log'
+
+$rootFolder.RegisterTaskDefinition('Test',$TaskDefinition,6,$taskRunAsuser,$taskRunasUserPwd ,1)
+
 #>
 [CmdletBinding()]
 [OutputType([bool])]
